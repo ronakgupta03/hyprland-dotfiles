@@ -1,0 +1,54 @@
+{
+  "CP main template": {
+    "prefix": "cp",
+    "body": [
+      "#include <bits/stdc++.h>",
+      "using namespace std;",
+      "#define int long long",
+      "#define endl \"\\n\"",
+      "",
+      "void solve(){",
+      "    $0",
+      "    return;",
+      "}",
+      "",
+      "signed main() {",
+      "    ios::sync_with_stdio(false);",
+      "    cin.tie(NULL);",
+      "",
+      "    solve();",
+      "",
+      "    return 0;",
+      "}"
+    ],
+    "description": "Competitive Programming C++ main template"
+  },
+  "CP testcases template": {
+    "prefix": "cpt",
+    "body": [
+      "#include <bits/stdc++.h>",
+      "using namespace std;",
+      "#define int long long",
+      "#define endl \"\\n\"",
+      "",
+      "void solve(){",
+      "    $0",
+      "    return;",
+      "}",
+      "",
+      "signed main() {",
+      "    ios::sync_with_stdio(false);",
+      "    cin.tie(NULL);",
+      "    int t;",
+      "    cin >> t;",
+      "    while(t--){",
+      "         solve();",
+      "    }",
+      "",
+      "",
+      "    return 0;",
+      "}"
+    ],
+    "description": "Competitive Programming C++ template with testcases"
+  }
+}

@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pre-newrice-*
+*.bak
+yay/pkg/
+yay/src/
+*.pkg.tar.zst
+*.tar.gz
+.cache/
+fish_variables
+local-overrides
+wallhaven.env
+.git-credentials
+.gitconfig
+lazy-lock.json.tmp

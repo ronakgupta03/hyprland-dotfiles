@@ -1,0 +1,365 @@
+#!/usr/bin/env bash
+# Wallpaper and theme in one step: awww shows the image, matugen derives the
+# palette from it, rice-theme-reload pushes that into everything running.
+#
+#   rice-wallpaper set <file>       show <file> and re-theme
+#   rice-wallpaper next | prev | random
+#   rice-wallpaper pick             rofi thumbnail grid (the old picker)
+#   rice-wallpaper restore          login: the last wallpaper, no transition
+#   rice-wallpaper theme [file]     palette only - needs no daemon
+#   rice-wallpaper current
+#   rice-wallpaper mode [dark|light|toggle]   re-theme the current wallpaper
+#                                   in that mode; no argument prints it
+#   rice-wallpaper prepare          build every cached asset (thumb, preview,
+#                                   palette dumps, record) - one-time per image;
+#                                   the CTRL+WIN+SHIFT+W keybind, idle priority
+#
+# Used by the Quickshell carousel (Super+Shift+W):
+#   rice-wallpaper palettes         JSON: every wallpaper, its thumbnail and palette
+#   rice-wallpaper preview <file>   show it and recolour the cheap things (bar,
+#                                   borders, cava) - NOT made current
+#   rice-wallpaper commit <file>    make it current and re-theme everything;
+#                                   no transition, the preview already shows it
+#
+# Cost model (why this is split up):
+#   deriving a palette from a 4K-8K image costs ~1.7s of single-core CPU, and
+#   decoding one for a thumbnail another ~4s of CPU. Doing that for 50 random
+#   images on EVERY carousel open (the old design, which was ~90% cache-miss
+#   against a 2500-image pool) pegged the CPU for 10-30s. So all of it is
+#   done ONCE per image by `prepare` (background, nice 19, on demand), and the
+#   hot paths only LOOK THINGS UP:
+#     palettes  = re-roll 20 + read 20 records + one jq        (~0.4s)
+#     preview   = awww on the 1080p preview + matugen JSON import (~0.3s)
+#   The 1080p preview is the panel's native resolution - the browsing
+#   cross-fade is pixel-identical to the full image, and awww decodes 10x
+#   less. The committed wallpaper is always the full-resolution original.
+#   `matugen json <dump>` renders every template byte-identical to a full
+#   image run (verified dark and light), so a cached dump replaces the
+#   derivation on preview/commit/theme/mode/restore.
+#
+# ~/Pictures/Wallpapers is curated for the palettes its images produce, so
+# cycling is a colour-scheme switcher as much as a picture switcher.
+set -uo pipefail
+
+DIR="${RICE_WALLPAPER_DIR:-$HOME/Pictures/Wallpapers}"
+CACHE="$HOME/.cache/rice"           # literal ~/.cache: matugen's config writes here too
+CURRENT="$CACHE/wallpaper"          # symlink to the image on screen
+THUMBS="$CACHE/thumbs"
+PREVIEWS="$CACHE/previews"
+DUMPS="$CACHE/dumps"
+RECORDS="$CACHE/records"
+SCHEME="${RICE_SCHEME:-scheme-tonal-spot}"
+COUNT="${RICE_WALLPAPER_COUNT:-50}"
+CAROUSEL_COUNT="${RICE_WALLPAPER_CAROUSEL_COUNT:-20}"
+PREP_PAR="${RICE_PREPARE_PARALLEL:-8}"
+# tonal-spot + --prefer saturation reproduces the palettes Noctalia derived.
+# Without --prefer, matugen stops to ask when an image has several candidate
+# source colours - and with no terminal attached it just fails.
+PREFER="--prefer saturation"
+
+mkdir -p "$CACHE" "$THUMBS" "$PREVIEWS" "$DUMPS" "$RECORDS"
+
+# dark or light, set by `rice-wallpaper mode` (the control centre's theme card)
+MODE="$(cat "$CACHE/mode" 2>/dev/null)"
+[[ "$MODE" == light ]] || MODE=dark
+
+die() { echo "rice-wallpaper: $*" >&2; notify-send -a rice-wallpaper "Wallpaper" "$*" 2>/dev/null; exit 1; }
+
+key() { printf '%s' "$1" | md5sum | cut -c1-16; }
+
+# ------------------------------------------------------------- cache paths --
+thumb_path()   { printf '%s/%s.png'  "$THUMBS"   "$(key "$1")"; }
+preview_path() { printf '%s/%s.jpg'  "$PREVIEWS" "$(key "$1")"; }
+# Dumps are keyed by scheme AND mode: the -m at derive time decides which
+# variant becomes each role's "default", so dark and light need their own.
+dump_path()    { printf '%s/%s|%s|%s.json' "$DUMPS" "$SCHEME" "$2" "$(key "$1")"; }
+
+# --------------------------------------------------------------- the pool --
+# A random COUNT of them: pick's rofi grid.
+list() {
+    find -L "$DIR" -type f \
+        \( -iname '*.jpg' -o -iname '*.jpeg' \
+           -o -iname '*.png' -o -iname '*.webp' \
+           -o -iname '*.gif' \) \
+        | shuf \
+        | head -n "$COUNT"
+}
+# The whole pool, filename-sorted: next/prev/random and the carousel.
+list_all() {
+    find -L "$DIR" -type f \
+        \( -iname '*.jpg' -o -iname '*.jpeg' \
+           -o -iname '*.png' -o -iname '*.webp' \
+           -o -iname '*.gif' \) \
+        -printf '%p\n' | sort
+}
+
+current() { readlink -f "$CURRENT" 2>/dev/null; }
+
+daemon() {
+    awww query >/dev/null 2>&1 && return 0
+    pgrep -x awww-daemon >/dev/null || setsid -f awww-daemon >/dev/null 2>&1
+    for _ in $(seq 50); do
+        awww query >/dev/null 2>&1 && return 0
+        sleep 0.1
+    done
+    die "awww-daemon did not start"
+}
+
+# ------------------------------------------------- one-time asset builders --
+# Every artifact is cached independently and re-made only when the source is
+# newer (or the artifact is missing), so this is a few stat()s once prepared.
+# Runs single-threaded per image; the caller parallelises.
+record_of() {
+    local f="$1" k rk
+    read -r k _ < <(printf '%s' "$f" | md5sum)
+    read -r rk _ < <(printf '%s|%s' "$SCHEME" "$f" | md5sum)
+    local r="$RECORDS/${rk:0:16}.json" t="$THUMBS/${k:0:16}.png" \
+          p="$PREVIEWS/${k:0:16}.jpg" \
+          td="$DUMPS/$SCHEME|dark|${k:0:16}.json" ld="$DUMPS/$SCHEME|light|${k:0:16}.json"
+    # 520x325: the strip's tiles are 300px wide, scaled 1.22x when current.
+    if [[ ! -s "$t" || "$f" -nt "$t" ]]; then
+        magick "${f}[0]" -thumbnail 520x325^ -gravity center -extent 520x325 "$t" 2>/dev/null
+    fi
+    # 1920x1080 = the panel's native pixels: the browsing preview at full
+    # quality with a fraction of the decode cost (0.11s vs ~1s for 6K).
+    if [[ ! -s "$p" || "$f" -nt "$p" ]]; then
+        magick "${f}[0]" -resize 1920x1080^ -gravity center -extent 1920x1080 -quality 88 "$p" 2>/dev/null
+    fi
+    # Importable palette dumps (matugen json reads these straight back).
+    if [[ ! -s "$td" || "$f" -nt "$td" ]]; then
+        matugen image "$f" -m dark -t "$SCHEME" $PREFER --dry-run -j strip -q 2>/dev/null > "$td.tmp" \
+            && mv "$td.tmp" "$td"
+    fi
+    if [[ ! -s "$ld" || "$f" -nt "$ld" ]]; then
+        matugen image "$f" -m light -t "$SCHEME" $PREFER --dry-run -j strip -q 2>/dev/null > "$ld.tmp" \
+            && mv "$ld.tmp" "$ld"
+    fi
+    # The carousel's per-wall record: one file, both modes, all references.
+    # An artifact that failed to build is referenced as "" so the carousel
+    # falls back to the original image instead of a broken load.
+    if [[ ! -s "$r" || "$f" -nt "$r" ]]; then
+        local tref="" pref=""
+        [[ -s "$t" ]] && tref="$t"
+        [[ -s "$p" ]] && pref="$p"
+        jq -nc --arg path "$(readlink -f -- "$f")" --arg thumb "$tref" --arg preview "$pref" \
+               --slurpfile dark "$td" --slurpfile light "$ld" \
+               '{path: $path, thumb: $thumb, preview: $preview,
+                 dark:  ($dark[0].colors  | map_values("#" + .default.color)),
+                 light: ($light[0].colors | map_values("#" + .default.color))}' \
+               > "$r.tmp" && mv "$r.tmp" "$r"
+    fi
+}
+
+# Render every themed file from the cached dump of the CURRENT mode - the
+# 0.16s path. Falls back to a full image derivation when no dump is cached
+# (e.g. a wallpaper added seconds ago that prepare has not reached).
+theme() {
+    local f="$1" d
+    d="$(dump_path "$f" "$MODE")"
+    if [[ -s "$d" && ! "$f" -nt "$d" ]] && matugen json "$d" -m "$MODE" -t "$SCHEME" -q 2>/dev/null; then
+        return 0
+    fi
+    matugen image "$f" -m "$MODE" -t "$SCHEME" $PREFER -q \
+        || die "matugen could not derive a palette from $f"
+}
+
+# 60, not 120: the panel is 60Hz, so half the frames were never scanned out.
+# Same wipe, same feel, half the work.
+show() {   # show <file> none|wipe
+    local f
+    f="$(readlink -f -- "$1")"
+    [[ -f "$f" ]] || die "no such file: $1"
+    daemon
+    if [[ "$2" == none ]]; then
+        awww img "$f" --resize crop --transition-type none
+    else
+        awww img "$f" --resize crop --transition-type wipe --transition-angle 30 \
+            --transition-duration 1.1 --transition-fps 60 --transition-bezier .19,1,.22,1
+    fi
+    ln -sfn "$f" "$CURRENT"
+    theme "$f"
+    "$HOME/.local/bin/rice-theme-reload"
+}
+
+index_of_current() {   # prints -1 when the current image is not in the folder
+    local cur i; cur="$(current)"
+    for i in "${!all[@]}"; do
+        [[ "${all[$i]}" == "$cur" ]] && { echo "$i"; return; }
+    done
+    for i in "${!all[@]}"; do   # resolve symlinks, if the pool ever has any
+        [[ "$(readlink -f -- "${all[$i]}")" == "$cur" ]] && { echo "$i"; return; }
+    done
+    echo -1
+}
+
+load() {
+    mapfile -t all < <(list)
+    (( ${#all[@]} )) || die "no wallpapers in $DIR"
+}
+load_all() {
+    mapfile -t all < <(list_all)
+    (( ${#all[@]} )) || die "no wallpapers in $DIR"
+}
+
+# ------------------------------------------------------------- subcommands --
+case "${1:-}" in
+    set)
+        [[ -n "${2:-}" ]] || die "usage: rice-wallpaper set <file>"
+        show "$2" wipe
+        ;;
+    next|prev)
+        load_all
+        idx="$(index_of_current)"; n=${#all[@]}
+        if [[ "$1" == next ]]; then i=$(( (idx + 1) % n )); else
+            (( idx < 0 )) && idx=0
+            i=$(( (idx - 1 + n) % n ))
+        fi
+        show "${all[$i]}" wipe
+        ;;
+    random)
+        load_all
+        idx="$(index_of_current)"; n=${#all[@]}
+        i=$(( RANDOM % n ))
+        (( n > 1 && i == idx )) && i=$(( (i + 1) % n ))
+        show "${all[$i]}" wipe
+        ;;
+    pick)
+        load
+        for f in "${all[@]}"; do
+            record_of "$f" &
+            (( $(jobs -rp | wc -l) >= 8 )) && wait -n
+        done
+        wait
+        idx="$(index_of_current)"; (( idx < 0 )) && idx=0
+        choice="$(for f in "${all[@]}"; do
+                      printf '%s\0icon\x1f%s\n' "$(basename "$f")" "$(thumb_path "$f")"
+                  done | rofi -dmenu -i -show-icons -no-custom -format i -p "󰸉  wallpaper" \
+                              -selected-row "$idx" -theme ~/.config/rofi/wallpaper.rasi)" || exit 0
+        [[ -n "$choice" ]] && show "${all[$choice]}" wipe
+        ;;
+    restore)
+        f="$(current)"
+        [[ -f "$f" ]] || f="$(list_all | head -n1)"
+        [[ -n "$f" ]] || exit 0
+        show "$f" none
+        ;;
+    theme)
+        f="${2:-$(current)}"
+        [[ -f "$f" ]] || f="$(list_all | head -n1)"
+        [[ -f "$f" ]] || die "no wallpaper to derive a palette from"
+        [[ -e "$CURRENT" ]] || ln -sfn "$(readlink -f -- "$f")" "$CURRENT"
+        theme "$f"
+        ;;
+    current)
+        current
+        ;;
+    # The carousel's lister: a FRESH random CAROUSEL_COUNT from the pool on
+    # every open - the user asked for variety, not a stable page. Records are
+    # all built by prepare (CTRL+WIN+SHIFT+W), so a re-roll is a pure lookup;
+    # an image without a record yet (added since the last run) is warmed here.
+    palettes)
+        mapfile -t chosen < <(list | head -n "$CAROUSEL_COUNT")
+        (( ${#chosen[@]} )) || die "no wallpapers in $DIR"
+        for f in "${chosen[@]}"; do
+            [[ -n "$f" ]] || continue
+            record_of "$f" &
+            (( $(jobs -rp | wc -l) >= 8 )) && wait -n
+        done
+        wait
+        cur="$(current)"
+        {
+            printf 'null\n'
+            for f in "${chosen[@]}"; do
+                read -r rk _ < <(printf '%s|%s' "$SCHEME" "$f" | md5sum)
+                [[ -s "$RECORDS/${rk:0:16}.json" ]] && cat "$RECORDS/${rk:0:16}.json"
+            done
+        } | jq -sc --arg mode "$MODE" --arg cur "$cur" \
+            '{current: $cur,
+              walls: [ .[1:][]
+                       | {path, name: (.path | split("/") | last | sub("\\.[^.]+$"; "")),
+                          thumb, preview,
+                          colors: (if $mode == "light" then .light else .dark end)}
+                       | . ]}'
+        ;;
+    preview)
+        f="$(readlink -f -- "${2:-}")"
+        [[ -f "$f" ]] || die "usage: rice-wallpaper preview <file>"
+        daemon
+        # Awww gets the 1080p preview (native panel pixels, 0.11s to decode);
+        # commit swaps in the full original. The carousel cross-fades its own
+        # copy, so no transition here - a fade would just trail the carousel
+        # by half a second in the strip under the bar.
+        record_of "$f"
+        pv="$(preview_path "$f")"
+        [[ -s "$pv" ]] || pv="$f"
+        awww img "$pv" --resize crop --transition-type none
+        theme "$f"
+        # Only what is cheap and visible around the carousel. waybar reloads
+        # its CSS by itself (reload_style_on_change); kitty, GTK and Qt wait
+        # for commit.
+        [[ -s "$CACHE/hypr-colors.lua" ]] && hyprctl eval "$(< "$CACHE/hypr-colors.lua")" >/dev/null 2>&1
+        pkill -USR2 -x cava
+        exit 0
+        ;;
+    commit)
+        [[ -n "${2:-}" ]] || die "usage: rice-wallpaper commit <file>"
+        show "$2" none
+        ;;
+    mode)
+        want="${2:-}"
+        case "$want" in
+            "")         echo "$MODE"; exit 0 ;;
+            toggle)     [[ "$MODE" == dark ]] && want=light || want=dark ;;
+            dark|light) ;;
+            *)          die "usage: rice-wallpaper mode [dark|light|toggle]" ;;
+        esac
+        printf '%s\n' "$want" > "$CACHE/mode"
+        MODE="$want"
+        f="$(current)"
+        [[ -f "$f" ]] || f="$(list | head -n1)"
+        [[ -f "$f" ]] || die "no wallpaper to derive a palette from"
+        theme "$f"
+        "$HOME/.local/bin/rice-theme-reload"
+        ;;
+    # Build every cached asset for the whole pool. Incremental (each artifact
+    # is re-made only when its source is newer), single-instance (flock), and
+    # self-depriorised: nice 19 + idle I/O, 8 workers, ImageMagick capped at
+    # 2 threads per job so the pool of workers matches the cores instead of
+    # oversubscribing them. The current wallpaper goes first so its palette
+    # is ready first. Started by the CTRL+WIN+SHIFT+W keybind; a second press
+    # while it runs just reports it's already going.
+    prepare)
+        if [[ "${RICE_PREP_NICED:-}" != 1 ]]; then
+            export RICE_PREP_NICED=1
+            exec nice -n 19 ionice -c2 -n7 "$0" prepare
+        fi
+        exec 9>"$CACHE/prepare.lock"
+        if ! flock -n 9; then
+            notify-send -a rice-wallpaper "Wallpaper cache" "already running" 2>/dev/null
+            exit 0
+        fi
+        export MAGICK_THREAD_LIMIT=2
+        notify-send -a rice-wallpaper "Wallpaper cache" "building (nice 19, runs in the background)" 2>/dev/null
+        cur="$(current)"
+        # current first, then the rest in random order
+        all=()
+        [[ -n "$cur" && -f "$cur" ]] && all+=("$cur")
+        while IFS= read -r f; do
+            [[ -n "$f" ]] && all+=("$f")
+        done < <(find -L "$DIR" -type f \
+            \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \
+               -o -iname '*.webp' -o -iname '*.gif' \) \
+            | { [[ -n "$cur" ]] && grep -vx "$(readlink -f -- "$cur")" || cat; } | shuf)
+        for f in "${all[@]}"; do
+            [[ -n "$f" ]] || continue
+            record_of "$f" &
+            (( $(jobs -rp | wc -l) >= $PREP_PAR )) && wait -n
+        done
+        wait
+        notify-send -a rice-wallpaper "Wallpaper cache" "done" 2>/dev/null
+        ;;
+    *)
+        sed -n '2,/^$/s/^# \{0,1\}//p' "$0"
+        exit 2
+        ;;
+esac
