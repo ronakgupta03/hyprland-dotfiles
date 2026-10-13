@@ -24,7 +24,7 @@ tooltip {
 tooltip label { color: @on_surface; padding: 2px 4px; }
 
 /* ------------------------------------------------------------- islands -- */
-#launch, #workspaces, #hw, #clock, #music, #capture, #tools, #sys, #tray {
+#launch, #workspaces, #hw, #clock, #custom-codeforces, #music, #capture, #tools, #sys, #tray {
     background: alpha(@surface_container, 0.85);
     border: 1px solid alpha(@outline_variant, 0.55);
     border-radius: 999px;
@@ -87,3 +87,13 @@ button:hover { background: alpha(@primary, 0.14); border-radius: 999px; }
 #custom-notifications.notification { color: @primary; }
 #custom-notifications.dnd, #custom-notifications.none { color: alpha(@primary, 0.6); }
 #tray > .needs-attention { background: alpha(@error, 0.3); border-radius: 999px; }
+
+/* Codeforces */
+#custom-codeforces { font-weight: bold; padding: 0 12px; font-size: 13px; }
+#custom-codeforces.grandmaster { color: #ff3333; }
+#custom-codeforces.master { color: #ffbb55; }
+#custom-codeforces.candidate-master { color: #cc66ff; }
+#custom-codeforces.expert { color: #6699ff; }
+#custom-codeforces.specialist { color: #33ddbb; }
+#custom-codeforces.pupil { color: #55ee55; }
+#custom-codeforces.newbie { color: #aaaaaa; }
