@@ -9,6 +9,14 @@ if [[ -s "$CACHE/hypr-colors.lua" ]]; then
     hyprctl eval "$(< "$CACHE/hypr-colors.lua")" >/dev/null 2>&1
 fi
 
+# SwayFX: reload border and accent colors live
+if [[ -n "$SWAYSOCK" && -s "$CACHE/palette.css" ]]; then
+    primary="$(grep '@define-color primary ' "$CACHE/palette.css" | head -n 1 | awk '{print $3}' | tr -d ';')"
+    if [[ -n "$primary" ]]; then
+        swaymsg client.focused "$primary" "$primary" "#ffffff" "$primary" "$primary" >/dev/null 2>&1
+    fi
+fi
+
 # waybar: nothing to do. reload_style_on_change picks up the new colors.css by
 # itself; a SIGUSR2 on top restarted every module and made the bar flicker.
 pkill -USR1 -x kitty                    # re-read kitty.conf, colours included
