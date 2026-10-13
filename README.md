@@ -9,7 +9,7 @@ It is built from small single-purpose pieces: Waybar for the bar, rofi for
 quick menus, and a [Quickshell](https://quickshell.org) layer for everything
 else.
 
-Based on [sayconlun-beep/hyprland-cachyos-rice](https://github.com/sayconlun-beep/hyprland-cachyos-rice), with local fixes (binds, env, rules, kitty, matugen incl. `templates/nvim-colors.lua`, quickshell, waybar, `rice-*` scripts) plus a LazyVim-based Neovim setup.
+Based on [Utsav-X-bit/hyprland-dotfiles](https://github.com/Utsav-X-bit/hyprland-dotfiles), customized for Ronak Gupta with dual-session SwayFX coexistence, 1:1 Sway keybind mappings, NVIDIA GeForce RTX 2050 compatibility, and display scaling.
 
 ## What's in it
 
@@ -60,7 +60,7 @@ The full list is in [PACKAGES.md](PACKAGES.md).
 ## Install
 
 ```bash
-git clone https://github.com/Utsav-X-bit/hyprland-dotfiles ~/hyprland-dotfiles
+git clone https://github.com/ronakgupta03/hyprland-dotfiles ~/hyprland-dotfiles
 cd ~/hyprland-dotfiles
 ./install.sh            # dry run: lists missing packages and every file it would touch
 ./install.sh --apply

@@ -8,59 +8,71 @@
 local bind, bindr, bindl, bindrl, bindm = rice.bind, rice.bindr, rice.bindl, rice.bindrl, rice.bindm
 local exec, dsp = hl.dsp.exec_cmd, hl.dsp
 
--- Your apps: point term, files and browser at whatever you use.
-local bin     = "~/.local/bin"          -- not on the session PATH - always spell it out
-local term    = "kitty"
-local files   = "thunar"
+-- Applications & environment
+local bin     = "~/.local/bin"
+local term    = "alacritty"
+local files   = "nemo"
 local browser = "firefox"
+local menu    = "rofi -show drun -theme ~/.config/rofi/launcher.rasi"
 
 -- ------------------------------------------------------------------- apps --
-bind("SUPER + RETURN",         exec("steam"))
-bind("SUPER + T",              exec(term))
-bind("CTRL + ALT + DELETE",    exec(term .. " --class taskmgr -e btop --force-utf"))
-bind("SUPER + SPACE",          exec("rofi -show drun -theme ~/.config/rofi/launcher.rasi"))
-bind("SUPER + SHIFT + SPACE",  exec("rofi -show filebrowser -theme ~/.config/rofi/launcher.rasi"))
-bind("CTRL + SHIFT + SPACE",   exec("rofi -show filebrowser -theme ~/.config/rofi/launcher.rasi"))
+bind("SUPER + RETURN",         exec(term))
+bind("SUPER + T",              exec("kitty"))
+bind("SUPER + D",              exec(menu))
 bind("SUPER + E",              exec(files))
 bind("SUPER + B",              exec(browser))
+bind("SUPER + W",              exec(bin .. "/rice-wallpaper next"))
+bind("SUPER + M",              exec("kitty -e bluetuith"))
+bind("CTRL + ALT + DELETE",    exec("nwg-bar"))
+bind("SUPER + SHIFT + E",      exec("/usr/bin/wlogout"))
+bind("SUPER + SHIFT + D",      exec("nwg-displays"))
+bind("SUPER + SHIFT + R",      exec("~/.config/sway/scripts/dev_layout.sh"))
+bind("SUPER + SHIFT + P",      exec("~/.config/sway/scripts/pomotroid_resize.sh"))
+bind("CTRL + SHIFT + L",       exec("loginctl lock-session"))
+bind("SUPER + SHIFT + T",      exec("loginctl lock-session"))
+bind("SUPER + SHIFT + Q",      dsp.window.close())
 bind("SUPER + Q",              dsp.window.close())
-bind("SUPER + SHIFT + Q",      dsp.exit())
+bind("SUPER + SHIFT + C",      exec("hyprctl reload"))
+bind("SUPER + SHIFT + SPACE",  dsp.window.float())
+bind("SUPER + SPACE",          dsp.window.float())
+bind("SUPER + F",              dsp.window.fullscreen())
+bind("SUPER + P",              dsp.layout("togglesplit"))
+bind("SUPER + O",              dsp.layout("togglesplit"))
 bind("SUPER + G",              dsp.window.float())
-bind("SUPER + S",              dsp.window.fullscreen())
-bind("SUPER + A",              dsp.layout("togglesplit"))
+bind("SUPER + S",              exec("rofi -show emoji -modi emoji -matching regex -sorting-method levenshtein"))
 
 -- ------------------------------------------------------------------ shell --
+bind("SUPER + V",              exec(bin .. "/rice-clipboard"))
 bind("SUPER + C",              exec(bin .. "/rice-clipboard"))
-bind("SUPER + N",              exec("qs -c rice ipc call notifications toggle"))   -- notification centre
+bind("SUPER + grave",          exec("qs -c rice ipc call dashboard toggle"))
+bind("SUPER + SHIFT + SPACE",  exec("qs -c rice ipc call dashboard toggle"))
+bind("SUPER + N",              exec("qs -c rice ipc call notifications toggle"))
+bind("SUPER + SHIFT + N",      exec("qs -c rice ipc call controlcenter toggle"))
 bind("SUPER + X",              exec(bin .. "/rice-power"))
-bind("SUPER + I",              exec("~/.config/hypr/scripts/no-idle-toggle.sh"))  -- no-idle: no sleep, lid-safe
-bind("SUPER + ESCAPE",         exec("loginctl lock-session"))           -- hypridle locks (Quickshell, else hyprlock)
-bind("SUPER + SHIFT + W",      exec("qs -c rice ipc call wallpaper toggle"))       -- carousel
-bind("SUPER + slash",          exec("qs -c rice ipc call binds toggle"))           -- cheatsheet + rebinding
-bind("SUPER + comma",          exec("qs -c rice ipc call settings toggle"))        -- settings hub
-bind("SUPER + D",              exec("qs -c rice ipc call dashboard toggle"))       -- dashboard
-bind("SUPER + SHIFT + S",      exec("flameshot gui"))                              -- screenshot (Flameshot)
+bind("SUPER + I",              exec("~/.config/hypr/scripts/no-idle-toggle.sh"))
+bind("SUPER + ESCAPE",         exec("loginctl lock-session"))
+bind("SUPER + SHIFT + W",      exec("qs -c rice ipc call wallpaper toggle"))
+bind("SUPER + slash",          exec("qs -c rice ipc call binds toggle"))
+bind("SUPER + comma",          exec("qs -c rice ipc call settings toggle"))
 bind("SUPER + ALT + W",        exec(bin .. "/rice-wallpaper next"))
 bind("SUPER + CTRL + W",       exec(bin .. "/rice-wallhaven"))
-bind("CTRL + SUPER + SHIFT + W", exec("setsid " .. bin .. "/rice-wallpaper prepare"))   -- build wallpaper cache
-bind("SUPER + SHIFT + D",      exec(bin .. "/rice-settings displays"))
-bind("SUPER + SHIFT + A",      exec(bin .. "/rice-settings look"))      -- SUPER + A alone is togglesplit
-bind("SUPER + SHIFT + B",      exec("pkill -USR1 -x waybar"))           -- hide/show the bar
-bind("SUPER + SHIFT + V",      exec("qs -c rice ipc call visualiser toggle"))      -- desktop visualiser
+bind("CTRL + SUPER + SHIFT + W", exec("setsid " .. bin .. "/rice-wallpaper prepare"))
+bind("SUPER + SHIFT + A",      exec(bin .. "/rice-settings look"))
+bind("SUPER + SHIFT + B",      exec("pkill -USR1 -x waybar"))
+bind("SUPER + SHIFT + V",      exec("qs -c rice ipc call visualiser toggle"))
 
-bind("Print",                  exec("flameshot gui"))
-bind("SHIFT + Print",          exec("flameshot full -c"))
-bind("SUPER + Print",          exec("flameshot gui -p ~/Pictures/Screenshots"))
-bind("CTRL + Print",           exec("flameshot full -p ~/Pictures/Screenshots"))
-bind("F8",                     exec(bin .. "/gsr-replay-save"))         -- save the last 3 min of the replay buffer
+bind("Print",                  exec("sh -c 'grim -g \"$(slurp)\" - | swappy -f -'"))
+bind("SHIFT + Print",          exec("sh -c 'grim ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png'"))
+bind("CTRL + Print",           exec("flameshot gui"))
+bind("SUPER + SHIFT + S",      exec("flameshot gui"))
+bind("F8",                     exec(bin .. "/gsr-replay-save"))
 
 -- ---------------------------------------------------- reading back / focus --
-bind("SUPER + P",              exec(bin .. "/read-aloud.sh --toggle"))
 bind("SUPER + bracketleft",    exec(bin .. "/read-aloud.sh --back"))
 bind("SUPER + bracketright",   exec(bin .. "/read-aloud.sh --forward"))
-bind("SUPER + SHIFT + R",      exec(bin .. "/read-aloud.sh --selection"))
-bind("SUPER + SHIFT + P",      exec(bin .. "/read-aloud.sh --stop"))
-bind("SUPER + F",              exec(bin .. "/hypr-focus.sh"))
+bind("SUPER + ALT + R",        exec(bin .. "/read-aloud.sh --selection"))
+bind("SUPER + ALT + P",        exec(bin .. "/read-aloud.sh --stop"))
+bind("SUPER + ALT + F",        exec(bin .. "/hypr-focus.sh"))
 
 -- ------------------------------------------------------- windows (vim keys) --
 bind("SUPER + H",              dsp.focus({ direction = "left" }))
@@ -76,6 +88,10 @@ bind("SUPER + CTRL + H",       dsp.window.swap({ direction = "left" }))
 bind("SUPER + CTRL + J",       dsp.window.swap({ direction = "down" }))
 bind("SUPER + CTRL + K",       dsp.window.swap({ direction = "up" }))
 bind("SUPER + CTRL + L",       dsp.window.swap({ direction = "right" }))
+bind("SUPER + SHIFT + left",   dsp.window.swap({ direction = "left" }))
+bind("SUPER + SHIFT + down",   dsp.window.swap({ direction = "down" }))
+bind("SUPER + SHIFT + up",     dsp.window.swap({ direction = "up" }))
+bind("SUPER + SHIFT + right",  dsp.window.swap({ direction = "right" }))
 
 bindr("SUPER + SHIFT + H",     dsp.window.resize({ x = -80, y = 0, relative = true }))
 bindr("SUPER + SHIFT + J",     dsp.window.resize({ x = 0, y = 80, relative = true }))
@@ -96,7 +112,6 @@ bind("SUPER + 7",              dsp.focus({ workspace = 7 }))
 bind("SUPER + 8",              dsp.focus({ workspace = 8 }))
 bind("SUPER + 9",              dsp.focus({ workspace = 9 }))
 bind("SUPER + 0",              dsp.focus({ workspace = 10 }))
-bind("SUPER + M",              dsp.focus({ workspace = "previous" }))
 
 bind("SUPER + SHIFT + 1",      dsp.window.move({ workspace = 1 }))
 bind("SUPER + SHIFT + 2",      dsp.window.move({ workspace = 2 }))
@@ -109,29 +124,25 @@ bind("SUPER + SHIFT + 8",      dsp.window.move({ workspace = 8 }))
 bind("SUPER + SHIFT + 9",      dsp.window.move({ workspace = 9 }))
 bind("SUPER + SHIFT + 0",      dsp.window.move({ workspace = 10 }))
 
+bind("SUPER + minus",          dsp.focus({ workspace = "special:scratchpad" }))
+bind("SUPER + SHIFT + minus",  dsp.window.move({ workspace = "special:scratchpad" }))
+
 bind("SUPER + TAB",            dsp.window.cycle_next())
 bind("SUPER + mouse_down",     dsp.focus({ workspace = "e+1" }))
 bind("SUPER + mouse_up",       dsp.focus({ workspace = "e-1" }))
 
 -- ------------------------------------------------------ media keys (+ OSD) --
--- Plain commands: the Quickshell OSD (Osd.qml) watches PipeWire and the
--- players itself, so nothing here has to ask for it to appear.
-bindrl("XF86AudioRaiseVolume",  exec("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"))
-bindrl("XF86AudioLowerVolume",  exec("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"))
-bindl("XF86AudioMute",          exec("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"))
-bindl("XF86AudioMicMute",       exec("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"))
+bindrl("XF86AudioRaiseVolume",  exec("pactl set-sink-volume @DEFAULT_SINK@ +5%"))
+bindrl("XF86AudioLowerVolume",  exec("pactl set-sink-volume @DEFAULT_SINK@ -5%"))
+bindl("XF86AudioMute",          exec("pactl set-sink-mute @DEFAULT_SINK@ toggle"))
+bindl("XF86AudioMicMute",       exec("pactl set-source-mute @DEFAULT_SOURCE@ toggle"))
 bindl("XF86AudioPlay",          exec("playerctl play-pause"))
 bindl("XF86AudioNext",          exec("playerctl next"))
 bindl("XF86AudioPrev",          exec("playerctl previous"))
 bindrl("XF86MonBrightnessUp",   exec("brightnessctl set 5%+"))
 bindrl("XF86MonBrightnessDown", exec("brightnessctl set 5%-"))
 
--- Rebinds made in the keybind menu live in conf.d/30-binds.lua, not here.
---
--- The menu enters this submap while it waits for a new combo: with nothing
--- bound in it, every key reaches the menu instead of firing its usual action.
--- Escape always leaves it - from Hyprland's side, so it works even if the
--- shell has died.
+-- Rebind submap for Quickshell
 hl.define_submap("rice-capture", function()
     hl.bind("escape", dsp.submap("reset"))
 end)

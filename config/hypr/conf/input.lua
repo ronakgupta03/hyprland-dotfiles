@@ -8,11 +8,13 @@ hl.config({
         accel_profile = "flat",
 
         touchpad = {
+            tap_to_click = true,
+            dwt = true,
             natural_scroll = false,
         },
     },
 
     cursor = {
-        no_hardware_cursors = false,
+        no_hardware_cursors = true,
     },
 })
