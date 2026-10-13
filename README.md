@@ -9,7 +9,7 @@ It is built from small single-purpose pieces: Waybar for the bar, rofi for
 quick menus, and a [Quickshell](https://quickshell.org) layer for everything
 else.
 
-Based on [Utsav-X-bit/hyprland-dotfiles](https://github.com/Utsav-X-bit/hyprland-dotfiles), customized for Ronak Gupta with dual-session SwayFX coexistence, 1:1 Sway keybind mappings, NVIDIA GeForce RTX 2050 compatibility, and display scaling.
+A complete Material You Hyprland & SwayFX rice customized for Ronak Gupta with dual-session coexistence, 1:1 Sway keybind mappings, NVIDIA GeForce RTX 2050 hardware compatibility, and display scaling.
 
 ## What's in it
 
