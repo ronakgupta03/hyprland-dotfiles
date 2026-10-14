@@ -95,7 +95,7 @@ hl.config({
     },
 
     dwindle = {
-        force_split = 2,
+        force_split = 0,
         preserve_split = true,
         default_split_ratio = 1.0,     -- even splits: cava | music, editor | terminal
     },

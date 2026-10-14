@@ -32,10 +32,8 @@ hl.window_rule({
 hl.window_rule({
     name = "media-idle-inhibit",
     match = { class = "^(firefox|chromium|mpv)$" },
-    workspace = 1, 
     idle_inhibit = "focus",
 })
-
 hl.window_rule({
     name = "video-players-float",
     match = { class = "^(vlc|mpv)$" },
