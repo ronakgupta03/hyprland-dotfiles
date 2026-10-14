@@ -76,3 +76,152 @@ function rice.focus(on)
         rice.focus_saved = nil
     end
 end
+
+-- ----------------------------------------------------------- scratchpad --
+-- Sway-compatible scratchpad stack (FIFO/MRU stack, cycling, auto-tile eject)
+rice.scratchpad_stack = rice.scratchpad_stack or {}
+rice.scratchpad_active = nil
+
+local function find_window_by_address(addr)
+    if not addr then return nil end
+    for _, w in ipairs(hl.get_windows()) do
+        if tostring(w.address) == tostring(addr) then
+            return w
+        end
+    end
+    return nil
+end
+
+local function clean_scratchpad_stack()
+    local valid = {}
+    local seen = {}
+    for _, addr in ipairs(rice.scratchpad_stack) do
+        local w = find_window_by_address(addr)
+        if w and not seen[addr] then
+            seen[addr] = true
+            valid[#valid + 1] = addr
+        end
+    end
+    rice.scratchpad_stack = valid
+end
+
+-- Sway move scratchpad (Mod+Shift+-)
+function rice.scratchpad_move()
+    local win = hl.get_active_window()
+    if not win then return end
+    local addr = tostring(win.address)
+
+    clean_scratchpad_stack()
+    for i, a in ipairs(rice.scratchpad_stack) do
+        if a == addr then
+            table.remove(rice.scratchpad_stack, i)
+            break
+        end
+    end
+    table.insert(rice.scratchpad_stack, 1, addr)
+    if rice.scratchpad_active == addr then
+        rice.scratchpad_active = nil
+    end
+
+    hl.dispatch(hl.dsp.window.move({ workspace = "special:scratchpad", silent = true, window = win }))
+end
+
+-- Sway scratchpad show (Mod+-)
+function rice.scratchpad_show()
+    clean_scratchpad_stack()
+    if #rice.scratchpad_stack == 0 then return end
+
+    local active_win = hl.get_active_window()
+    local active_addr = active_win and tostring(active_win.address) or nil
+
+    local current_showing = nil
+    if rice.scratchpad_active then
+        current_showing = find_window_by_address(rice.scratchpad_active)
+    end
+
+    if current_showing then
+        if active_addr == rice.scratchpad_active then
+            if #rice.scratchpad_stack == 1 then
+                hl.dispatch(hl.dsp.window.move({ workspace = "special:scratchpad", silent = true, window = current_showing }))
+                rice.scratchpad_active = nil
+                return
+            else
+                hl.dispatch(hl.dsp.window.move({ workspace = "special:scratchpad", silent = true, window = current_showing }))
+                local top = table.remove(rice.scratchpad_stack, 1)
+                table.insert(rice.scratchpad_stack, top)
+            end
+        else
+            hl.dispatch(hl.dsp.focus({ window = current_showing }))
+            return
+        end
+    end
+
+    local target_addr = rice.scratchpad_stack[1]
+    local target_win = find_window_by_address(target_addr)
+    if not target_win then
+        table.remove(rice.scratchpad_stack, 1)
+        return rice.scratchpad_show()
+    end
+
+    local mon = hl.get_monitor(target_win.monitor) or hl.get_active_monitor()
+    local target_ws = mon and mon.active_workspace or hl.get_active_workspace()
+
+    hl.dispatch(hl.dsp.window.move({ workspace = target_ws.id, window = target_win }))
+    hl.dispatch(hl.dsp.window.float({ action = "set", window = target_win }))
+    hl.dispatch(hl.dsp.focus({ window = target_win }))
+    rice.scratchpad_active = target_addr
+end
+
+-- Leave scratchpad and tile (Mod+Shift+Space / Mod+Space)
+function rice.scratchpad_tile_or_float()
+    local win = hl.get_active_window()
+    if not win then return end
+    local addr = tostring(win.address)
+    local is_scratchpad = false
+
+    for i, a in ipairs(rice.scratchpad_stack) do
+        if a == addr then
+            table.remove(rice.scratchpad_stack, i)
+            is_scratchpad = true
+            break
+        end
+    end
+    if rice.scratchpad_active == addr then
+        rice.scratchpad_active = nil
+        is_scratchpad = true
+    end
+
+    if is_scratchpad then
+        hl.dispatch(hl.dsp.window.float({ action = "disable", window = win }))
+    else
+        hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
+    end
+end
+
+function rice.scratchpad_tile_or_split()
+    local win = hl.get_active_window()
+    if not win then
+        hl.dispatch(hl.dsp.layout("togglesplit"))
+        return
+    end
+    local addr = tostring(win.address)
+    local is_scratchpad = false
+
+    for i, a in ipairs(rice.scratchpad_stack) do
+        if a == addr then
+            table.remove(rice.scratchpad_stack, i)
+            is_scratchpad = true
+            break
+        end
+    end
+    if rice.scratchpad_active == addr then
+        rice.scratchpad_active = nil
+        is_scratchpad = true
+    end
+
+    if is_scratchpad then
+        hl.dispatch(hl.dsp.window.float({ action = "disable", window = win }))
+    else
+        hl.dispatch(hl.dsp.layout("togglesplit"))
+    end
+end
