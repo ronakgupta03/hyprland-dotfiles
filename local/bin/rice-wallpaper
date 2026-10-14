@@ -154,6 +154,7 @@ record_of() {
 # 0.16s path. Falls back to a full image derivation when no dump is cached
 # (e.g. a wallpaper added seconds ago that prepare has not reached).
 theme() {
+    command -v matugen >/dev/null 2>&1 || return 0
     local f="$1" d
     d="$(dump_path "$f" "$MODE")"
     if [[ -s "$d" && ! "$f" -nt "$d" ]] && matugen json "$d" -m "$MODE" -t "$SCHEME" -q 2>/dev/null; then
