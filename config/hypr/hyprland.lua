@@ -54,8 +54,8 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 -- rejected as an invalid colour.
 hl.config({
     general = {
-        gaps_in = 2,
-        gaps_out = 8,
+        gaps_in = 4,
+        gaps_out = 4,
         border_size = 2,
         col = {
             active_border = { colors = { c.primary, c.tertiary }, angle = 45 },
@@ -67,9 +67,11 @@ hl.config({
     },
 
     decoration = {
-        rounding = 4,
+        rounding = 12,
         active_opacity = 1.0,
-        inactive_opacity = 0.9,
+        inactive_opacity = 1.0,
+        dim_inactive = true,
+        dim_strength = 0.1,
 
         shadow = {
             enabled = true,

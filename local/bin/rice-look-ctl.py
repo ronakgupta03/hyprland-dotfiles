@@ -59,6 +59,8 @@ SCHEMA = [
     ("decoration:rounding", "Rounding",  "int",   0, 24, 1,    "Windows"),
     ("decoration:active_opacity",   "Active opacity",   "float", 0.5, 1.0, 0.01, "Windows"),
     ("decoration:inactive_opacity", "Inactive opacity", "float", 0.5, 1.0, 0.01, "Windows"),
+    ("decoration:dim_inactive",     "Dim inactive",     "bool",  0, 1, 1,        "Windows"),
+    ("decoration:dim_strength",     "Dim strength",     "float", 0.0, 1.0, 0.05, "Windows"),
 
     ("decoration:blur:enabled", "Blur",       "bool",  0, 1, 1, "Blur"),
     ("decoration:blur:size",    "Blur size",  "int",   1, 20, 1, "Blur"),

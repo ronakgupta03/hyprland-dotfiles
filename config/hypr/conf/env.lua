@@ -1,4 +1,5 @@
 -- Qt goes through qt6ct. NOT "kde": that platform theme ships with
+hl.env("PATH", os.getenv("HOME") .. "/.local/bin:" .. (os.getenv("PATH") or ""))
 -- plasma-integration, which is not installed, and Qt silently falls back to an
 -- unthemed default (light chrome around a dark Dolphin view).
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
