@@ -104,6 +104,14 @@ local function clean_scratchpad_stack()
     end
     rice.scratchpad_stack = valid
 end
+local function close_special_if_open()
+    local sws = hl.get_active_special_workspace()
+    if sws then
+        local name = sws.name:gsub("^special:?", "")
+        if name == "" then name = "scratchpad" end
+        hl.dispatch(hl.dsp.workspace.toggle_special(name))
+    end
+end
 
 -- Sway move scratchpad (Mod+Shift+-)
 function rice.scratchpad_move()
@@ -123,7 +131,8 @@ function rice.scratchpad_move()
         rice.scratchpad_active = nil
     end
 
-    hl.dispatch(hl.dsp.window.move({ workspace = "special:scratchpad", silent = true, window = win }))
+    hl.dispatch(hl.dsp.window.move({ workspace = "special:scratchpad", window = win }))
+    close_special_if_open()
 end
 
 -- Sway scratchpad show (Mod+-)
@@ -142,11 +151,13 @@ function rice.scratchpad_show()
     if current_showing then
         if active_addr == rice.scratchpad_active then
             if #rice.scratchpad_stack == 1 then
-                hl.dispatch(hl.dsp.window.move({ workspace = "special:scratchpad", silent = true, window = current_showing }))
+                hl.dispatch(hl.dsp.window.move({ workspace = "special:scratchpad", window = current_showing }))
+                close_special_if_open()
                 rice.scratchpad_active = nil
                 return
             else
-                hl.dispatch(hl.dsp.window.move({ workspace = "special:scratchpad", silent = true, window = current_showing }))
+                hl.dispatch(hl.dsp.window.move({ workspace = "special:scratchpad", window = current_showing }))
+                close_special_if_open()
                 local top = table.remove(rice.scratchpad_stack, 1)
                 table.insert(rice.scratchpad_stack, top)
             end
@@ -167,6 +178,7 @@ function rice.scratchpad_show()
     local target_ws = mon and mon.active_workspace or hl.get_active_workspace()
 
     hl.dispatch(hl.dsp.window.move({ workspace = target_ws.id, window = target_win }))
+    close_special_if_open()
     hl.dispatch(hl.dsp.window.float({ action = "set", window = target_win }))
     hl.dispatch(hl.dsp.focus({ window = target_win }))
     rice.scratchpad_active = target_addr
