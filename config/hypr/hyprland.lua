@@ -131,7 +131,7 @@ hl.config({
         enable_swallow = true,
         swallow_regex = "^(kitty|konsole|foot)$",
         animate_manual_resizes = false,
-        focus_on_activate = true,
+        focus_on_activate = false,
         -- If the lock screen (Quickshell's WlSessionLock) ever dies while locked,
         -- the session stays locked but another locker may take over - from a TTY:
         --   hyprctl --instance 0 dispatch 'hl.dsp.exec_cmd("hyprlock")'

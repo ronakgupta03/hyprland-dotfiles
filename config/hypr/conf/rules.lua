@@ -18,7 +18,7 @@ hl.window_rule({
 
 hl.window_rule({
     name = "float-utilities",
-    match = { class = [[^(pavucontrol|org\.pulseaudio\.pavucontrol|nm-connection-editor|hyprpolkitagent|com\.gabm\.satty|org\.kde\.kcalc)$]] },
+    match = { class = [[^(pavucontrol|org\.pulseaudio\.pavucontrol|nm-connection-editor|blueman-manager|Blueman-manager|hyprpolkitagent|com\.gabm\.satty|org\.kde\.kcalc)$]] },
     float = true,
 })
 
