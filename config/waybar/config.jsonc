@@ -114,7 +114,8 @@
     "interval": 300,
     "signal": 10,
     "format": "{}",
-    "on-click": "/usr/bin/python3 ~/.config/waybar/scripts/dsa_tracker.py toggle",
+    "on-click": "qs -c rice ipc call dashboard tab activities",
+    "on-click-right": "/usr/bin/python3 ~/.config/waybar/scripts/dsa_tracker.py toggle",
     "tooltip": true
   },
 
