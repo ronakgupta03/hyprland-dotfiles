@@ -39,6 +39,7 @@ Singleton {
         authCheck.running = true
         scanLocal()
     }
+    Component.onCompleted: refresh()
 
     function parse(text) {
         try {

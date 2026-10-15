@@ -11,6 +11,10 @@ Singleton {
     id: root
 
     property var c: ({})
+    // Waybar's "height" (config.jsonc). Panels that hang from the bar cover it
+    // and push their content down by this much.
+    readonly property int barHeight: 42
+
 
     readonly property color primary: c.primary ?? "#7dcfff"
     readonly property color on_primary: c.on_primary ?? "#00344a"

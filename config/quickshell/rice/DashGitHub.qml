@@ -18,6 +18,10 @@ RowLayout {
         Quickshell.execDetached(["xdg-open", url])
         dash.close()
     }
+    Component.onCompleted: {
+        if (Date.now() - GitHubService.refreshedAt > 60000)
+            GitHubService.refresh()
+    }
 
     component Row: Rectangle {
         id: row
