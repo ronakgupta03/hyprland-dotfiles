@@ -14,10 +14,14 @@
   "reload_style_on_change": true,
 
   "modules-left": ["group/launch", "hyprland/workspaces", "group/hw"],
-  "modules-center": ["clock", "custom/codeforces", "custom/dsa", "group/music"],
+  "modules-center": ["group/center"],
   "modules-right": ["group/capture", "group/tools", "group/sys", "tray"],
 
   // ---------------------------------------------------------------- groups --
+  "group/center": {
+    "orientation": "horizontal",
+    "modules": ["clock", "custom/codeforces", "custom/dsa", "group/music"]
+  },
   "group/launch":  { "orientation": "horizontal", "modules": ["custom/launcher", "custom/clipboard"] },
   "group/hw":      { "orientation": "horizontal", "modules": ["cpu", "custom/gpu", "memory"] },
   "group/capture": { "orientation": "horizontal", "modules": ["custom/screenshot", "custom/record"] },
