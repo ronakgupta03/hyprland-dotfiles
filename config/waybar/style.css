@@ -24,7 +24,7 @@ tooltip {
 tooltip label { color: @on_surface; padding: 2px 4px; }
 
 /* ------------------------------------------------------------- islands -- */
-#launch, #workspaces, #hw, #center, #capture, #tools, #sys, #tray {
+#launch, #workspaces, #hw, #clock, #music, #capture, #tools, #sys, #tray {
     background: alpha(@surface_container, 0.85);
     border: 1px solid alpha(@outline_variant, 0.55);
     border-radius: 999px;
@@ -40,8 +40,7 @@ tooltip label { color: @on_surface; padding: 2px 4px; }
 #cpu, #custom-gpu, #memory, #battery,
 #custom-screenshot, #custom-record,
 #custom-notifications,
-#backlight, #network, #bluetooth, #pulseaudio,
-#clock, #custom-codeforces, #custom-dsa {
+#backlight, #network, #bluetooth, #pulseaudio {
     padding: 0 6px;
     color: @primary;
 }
@@ -78,8 +77,7 @@ button:hover { background: alpha(@primary, 0.14); border-radius: 999px; }
 }
 
 /* --------------------------------------------------------------- state -- */
-#clock { color: @primary; font-weight: bold; padding: 0 8px; }
-#center #music { background: transparent; border: none; margin: 0; padding: 0 4px; }
+#clock { color: @primary; font-weight: bold; padding: 0 16px; }
 #custom-music { color: @primary; padding: 0 6px; }
 #custom-nowplaying { color: @primary; padding: 0 8px 0 2px; }
 #custom-nowplaying.paused { color: alpha(@primary, 0.6); }
@@ -95,30 +93,3 @@ button:hover { background: alpha(@primary, 0.14); border-radius: 999px; }
 #custom-notifications.dnd, #custom-notifications.none { color: alpha(@primary, 0.6); }
 #tray > .needs-attention { background: alpha(@error, 0.3); border-radius: 999px; }
 
-/* Codeforces Activity */
-#custom-codeforces {
-    font-weight: bold;
-    padding: 0 14px;
-    font-size: 13px;
-}
-#custom-codeforces.pupil { color: #55ee55; }
-#custom-codeforces.specialist { color: #33ddbb; }
-#custom-codeforces.expert { color: #6699ff; }
-#custom-codeforces.candidate-master { color: #cc66ff; }
-#custom-codeforces.master { color: #ffbb55; }
-#custom-codeforces.grandmaster { color: #ff3333; }
-#custom-codeforces.newbie { color: #aaaaaa; }
-
-/* DSA Curriculum Tracker */
-#custom-dsa {
-    font-weight: bold;
-    padding: 0 14px;
-    font-size: 13px;
-    color: @primary;
-}
-#custom-dsa.active { color: @tertiary; }
-#custom-dsa.complete { color: #73daca; }
-button#custom-dsa:hover {
-    background: alpha(@primary, 0.18);
-    border-radius: 999px;
-}

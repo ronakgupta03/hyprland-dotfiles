@@ -14,14 +14,9 @@
   "reload_style_on_change": true,
 
   "modules-left": ["group/launch", "hyprland/workspaces", "group/hw"],
-  "modules-center": ["group/center"],
+  "modules-center": ["clock", "group/music"],
   "modules-right": ["group/capture", "group/tools", "group/sys", "tray"],
-
   // ---------------------------------------------------------------- groups --
-  "group/center": {
-    "orientation": "horizontal",
-    "modules": ["clock", "custom/codeforces", "custom/dsa", "group/music"]
-  },
   "group/launch":  { "orientation": "horizontal", "modules": ["custom/launcher", "custom/clipboard"] },
   "group/hw":      { "orientation": "horizontal", "modules": ["cpu", "custom/gpu", "memory"] },
   "group/capture": { "orientation": "horizontal", "modules": ["custom/screenshot", "custom/record"] },
@@ -98,25 +93,6 @@
     "max-length": 48,
     "on-click": "qs -c rice ipc call dashboard tab media",
     "on-click-right": "playerctl play-pause"
-  },
-
-  "custom/codeforces": {
-    "exec": "python3 ~/.config/waybar/scripts/codeforces.py",
-    "return-type": "json",
-    "interval": 300,
-    "signal": 9,
-    "on-click": "python3 -c \"import json, os, webbrowser; d=json.load(open(os.path.expanduser('~/.config/sway/codeforces.json'))); webbrowser.open('https://codeforces.com/profile/' + d.get('handle',''))\"",
-    "on-click-right": "~/.config/waybar/scripts/set_cf_handle.sh"
-  },
-
-  "custom/dsa": {
-    "exec": "/usr/bin/python3 ~/.config/waybar/scripts/dsa_status.py",
-    "return-type": "json",
-    "interval": 300,
-    "signal": 10,
-    "format": "{}",
-    "on-click": "/usr/bin/python3 ~/.config/waybar/scripts/dsa_tracker.py toggle",
-    "tooltip": true
   },
 
   // ----------------------------------------------------------------- right --
