@@ -10,8 +10,6 @@ ColumnLayout {
 
     property var dash
     property string searchQuery: ""
-    property var expandedParts: ({})
-    property var expandedChapters: ({})
 
     spacing: 14
 
@@ -61,155 +59,85 @@ ColumnLayout {
     }
 
     // ------------------------------------------------------------- top cards --
-    RowLayout {
+    DashCard {
         Layout.fillWidth: true
-        spacing: 12
+        Layout.preferredHeight: 90
 
-        // Codeforces Card
-        DashCard {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 110
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: 14
+            spacing: 16
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 16
-                spacing: 14
+            Rectangle {
+                implicitWidth: 44
+                implicitHeight: 44
+                radius: 22
+                color: Theme.alpha(Theme.primary, 0.16)
 
-                Rectangle {
-                    implicitWidth: 44
-                    implicitHeight: 44
-                    radius: 22
-                    color: Theme.alpha(ActivitiesService.cfColor, 0.16)
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "󰣇"
-                        font.family: Theme.mono
-                        font.pixelSize: 22
-                        color: ActivitiesService.cfColor
-                    }
-                }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 3
-
-                    Row {
-                        spacing: 8
-                        Text {
-                            text: "Codeforces"
-                            color: Theme.on_surface_variant
-                            font.family: Theme.font
-                            font.pixelSize: 12
-                            font.weight: Font.DemiBold
-                        }
-                        Text {
-                            text: ActivitiesService.cfRank
-                            color: ActivitiesService.cfColor
-                            font.family: Theme.font
-                            font.pixelSize: 12
-                            font.weight: Font.Bold
-                        }
-                    }
-
-                    Text {
-                        text: ActivitiesService.cfHandle + ": " + ActivitiesService.cfRating
-                        color: Theme.on_surface
-                        font.family: Theme.font
-                        font.pixelSize: 16
-                        font.weight: Font.Bold
-                    }
-
-                    Text {
-                        text: "Peak: " + ActivitiesService.cfMaxRank + " (" + ActivitiesService.cfMaxRating + ")"
-                        color: Theme.on_surface_variant
-                        font.family: Theme.font
-                        font.pixelSize: 11
-                    }
-                }
-
-                PillButton {
-                    label: "Profile 󰌹"
-                    onClicked: ActivitiesService.openCodeforcesProfile()
+                Text {
+                    anchors.centerIn: parent
+                    text: "󰉻"
+                    font.family: Theme.mono
+                    font.pixelSize: 22
+                    color: Theme.primary
                 }
             }
-        }
 
-        // LeetCode & DSA Tracker Card
-        DashCard {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 110
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 3
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 16
-                spacing: 14
-
-                Rectangle {
-                    implicitWidth: 44
-                    implicitHeight: 44
-                    radius: 22
-                    color: Theme.alpha(Theme.primary, 0.16)
-
+                Row {
+                    spacing: 8
                     Text {
-                        anchors.centerIn: parent
-                        text: "󰉻"
-                        font.family: Theme.mono
-                        font.pixelSize: 22
-                        color: Theme.primary
-                    }
-                }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 4
-
-                    Row {
-                        spacing: 8
-                        Text {
-                            text: "DSA & LeetCode"
-                            color: Theme.on_surface_variant
-                            font.family: Theme.font
-                            font.pixelSize: 12
-                            font.weight: Font.DemiBold
-                        }
-                        Text {
-                            text: ActivitiesService.lcUser + " (" + ActivitiesService.lcTotalSolved + " solved)"
-                            color: Theme.primary
-                            font.family: Theme.font
-                            font.pixelSize: 12
-                            font.weight: Font.Bold
-                        }
-                    }
-
-                    Text {
-                        text: ActivitiesService.dsaQuestionsDone + " / " + ActivitiesService.dsaTotalQuestions + " Questions (" + Math.round(ActivitiesService.dsaProgress * 100) + "%)"
+                        text: "DSA Curriculum & LeetCode"
                         color: Theme.on_surface
                         font.family: Theme.font
-                        font.pixelSize: 15
+                        font.pixelSize: 14
                         font.weight: Font.Bold
                     }
-
-                    // Progress bar
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: 6
-                        radius: 3
-                        color: Theme.alpha(Theme.on_surface, 0.1)
-
-                        Rectangle {
-                            height: parent.height
-                            radius: 3
-                            color: Theme.primary
-                            width: parent.width * ActivitiesService.dsaProgress
-                            Behavior on width { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
-                        }
+                    Text {
+                        text: "· " + ActivitiesService.lcUser + " (" + ActivitiesService.lcTotalSolved + " solved on LeetCode)"
+                        color: Theme.primary
+                        font.family: Theme.font
+                        font.pixelSize: 12
+                        font.weight: Font.Bold
                     }
                 }
 
+                Text {
+                    text: ActivitiesService.dsaChaptersDone + " / " + ActivitiesService.dsaTotalChapters + " Chapters  ·  " + ActivitiesService.dsaQuestionsDone + " / " + ActivitiesService.dsaTotalQuestions + " Questions (" + Math.round(ActivitiesService.dsaProgress * 100) + "%)"
+                    color: Theme.on_surface_variant
+                    font.family: Theme.font
+                    font.pixelSize: 12
+                }
+
+                // Progress bar
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 6
+                    radius: 3
+                    color: Theme.alpha(Theme.on_surface, 0.1)
+
+                    Rectangle {
+                        height: parent.height
+                        radius: 3
+                        color: Theme.primary
+                        width: parent.width * ActivitiesService.dsaProgress
+                        Behavior on width { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+                    }
+                }
+            }
+
+            RowLayout {
+                spacing: 8
                 PillButton {
                     label: "󰑐 Sync"
                     onClicked: ActivitiesService.syncLeetCode()
+                }
+                PillButton {
+                    label: "CF Stats 󰌹"
+                    onClicked: page.dash.showTab("cf")
                 }
             }
         }
@@ -262,24 +190,19 @@ ColumnLayout {
 
         PillButton {
             label: "Expand All"
-            onClicked: {
-                const map = {}
-                for (let i = 0; i < ActivitiesService.curriculum.length; i++)
-                    map[i] = true
-                page.expandedParts = map
-            }
+            onClicked: ActivitiesService.setAllPartsExpanded(true)
         }
 
         PillButton {
             label: "Collapse All"
-            onClicked: page.expandedParts = ({})
+            onClicked: ActivitiesService.setAllPartsExpanded(false)
         }
     }
 
     // -------------------------------------------------------- curriculum list --
     DashCard {
         Layout.fillWidth: true
-        Layout.preferredHeight: 330
+        Layout.preferredHeight: 360
         clip: true
 
         Flickable {
@@ -316,7 +239,7 @@ ColumnLayout {
                         width: parent.width
                         spacing: 4
 
-                        readonly property bool isExpanded: page.searchQuery !== "" || !!page.expandedParts[index]
+                        readonly property bool isExpanded: page.searchQuery !== "" || ActivitiesService.isPartExpanded(index)
 
                         // Part Header Row
                         Rectangle {
@@ -330,11 +253,7 @@ ColumnLayout {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    const next = Object.assign({}, page.expandedParts)
-                                    next[index] = !next[index]
-                                    page.expandedParts = next
-                                }
+                                onClicked: ActivitiesService.togglePartExpanded(index)
                             }
 
                             RowLayout {
@@ -434,7 +353,7 @@ ColumnLayout {
                                     spacing: 3
 
                                     readonly property bool isDone: ActivitiesService.isChapterDone(modelData.num)
-                                    readonly property bool showProblems: !!page.expandedChapters[modelData.num]
+                                    readonly property bool showProblems: ActivitiesService.isChapterExpanded(modelData.num)
 
                                     readonly property int solvedCount: {
                                         if (!modelData.problems) return 0
@@ -516,11 +435,7 @@ ColumnLayout {
                                             MouseArea {
                                                 anchors.fill: parent
                                                 cursorShape: Qt.PointingHandCursor
-                                                onClicked: {
-                                                    const next = Object.assign({}, page.expandedChapters)
-                                                    next[modelData.num] = !next[modelData.num]
-                                                    page.expandedChapters = next
-                                                }
+                                                onClicked: ActivitiesService.toggleChapterExpanded(modelData.num)
                                             }
                                         }
 

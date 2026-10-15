@@ -14,6 +14,8 @@ Singleton {
     property var completedChapters: []
     property var solvedProblemIds: []
     property var autoCompleted: []
+    property var expandedParts: ({})
+    property var expandedChapters: ({})
 
     // LeetCode stats
     property string lcUser: "the__ronakgupta"
@@ -94,6 +96,8 @@ Singleton {
                 const d = JSON.parse(text()) || {}
                 root.completedChapters = d.completed_chapters || []
                 root.autoCompleted = d.auto_completed || []
+                root.expandedParts = d.expanded_parts || ({})
+                root.expandedChapters = d.expanded_chapters || ({})
                 if (d.leetcode_user)
                     root.lcUser = d.leetcode_user
             } catch (e) {
@@ -181,11 +185,45 @@ Singleton {
             completed_chapters: completedChapters.slice().sort(),
             auto_completed: autoCompleted,
             solved_questions: solvedProblemIds,
+            expanded_parts: expandedParts,
+            expanded_chapters: expandedChapters,
             leetcode_user: lcUser,
             last_sync: Math.floor(Date.now() / 1000)
         }
         stateFile.setText(JSON.stringify(payload, null, 2) + "\n")
         Quickshell.execDetached(["killall", "-44", "waybar"])
+    }
+
+    function isPartExpanded(idx) {
+        return !!expandedParts[idx]
+    }
+
+    function togglePartExpanded(idx) {
+        const next = Object.assign({}, expandedParts)
+        next[idx] = !next[idx]
+        expandedParts = next
+        saveState()
+    }
+
+    function isChapterExpanded(num) {
+        return !!expandedChapters[num]
+    }
+
+    function toggleChapterExpanded(num) {
+        const next = Object.assign({}, expandedChapters)
+        next[num] = !next[num]
+        expandedChapters = next
+        saveState()
+    }
+
+    function setAllPartsExpanded(val) {
+        const next = {}
+        if (val) {
+            for (let i = 0; i < curriculum.length; i++)
+                next[i] = true
+        }
+        expandedParts = next
+        saveState()
     }
 
     function syncLeetCode() {

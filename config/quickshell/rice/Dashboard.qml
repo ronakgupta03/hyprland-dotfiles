@@ -26,10 +26,11 @@ Scope {
         { name: "Media", icon: "music" },
         { name: "Weather", icon: "cloud-sun" },
         { name: "Alerts", icon: "bell" },
+        { name: "CF", icon: "trophy" },
         { name: "System", icon: "activity" },
         { name: "Productivity", icon: "list-checks" },
         { name: "GitHub", icon: "git-branch" },
-        { name: "Activities", icon: "terminal" }
+        { name: "DSA", icon: "book-marked" }
     ]
 
     // The GitHub tab's data is fetched on demand, at most once a minute.
@@ -37,7 +38,7 @@ Scope {
     onOpenChanged: refreshGitHub()
 
     function refreshGitHub() {
-        if (open && tab === 6 && Date.now() - GitHubService.refreshedAt > 60000)
+        if (open && tab === 7 && Date.now() - GitHubService.refreshedAt > 60000)
             GitHubService.refresh()
     }
 
@@ -84,7 +85,7 @@ Scope {
     Binding {
         target: SystemStats
         property: "watched"
-        value: root.open && (root.tab === 0 || root.tab === 4)
+        value: root.open && (root.tab === 0 || root.tab === 5)
     }
 
     LazyLoader {
@@ -240,7 +241,7 @@ Scope {
                     Loader {
                         id: page
                         Layout.fillWidth: true
-                        sourceComponent: [overview, media, weather, alerts, system, productivity, github, activities][root.tab]
+                        sourceComponent: [overview, media, weather, alerts, cfTab, system, productivity, github, activities][root.tab]
                         onLoaded: {
                             item.opacity = 0
                             fade.restart()
@@ -279,6 +280,11 @@ Scope {
         DashAlerts { dash: root }
     }
 
+
+    Component {
+        id: cfTab
+        DashCodeforces { dash: root }
+    }
     Component {
         id: system
         DashSystem { dash: root }
