@@ -61,6 +61,7 @@ bind("SUPER + SHIFT + A",      exec(bin .. "/rice-settings look"))
 bind("SUPER + SHIFT + B",      exec("pkill -USR1 -x waybar"))
 bind("SUPER + SHIFT + V",      exec("qs -c rice ipc call visualiser toggle"))
 bind("SUPER + ALT + V",        exec("qs -c rice ipc call lyrics toggle"))
+bind("SUPER + ALT + L",        exec("qs -c rice ipc call lyrics toggle"))
 
 bind("Print",                  exec("sh -c 'grim -g \"$(slurp)\" - | swappy -f -'"))
 bind("SHIFT + Print",          exec("sh -c 'grim ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png'"))

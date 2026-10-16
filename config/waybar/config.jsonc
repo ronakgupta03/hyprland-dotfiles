@@ -3,7 +3,7 @@
 //
 //   left    launcher + clipboard · workspaces · cpu gpu ram
 //   centre  clock · music (opens the dashboard's Media tab)
-//   right   screenshot + record · notifications · network volume mic battery · tray
+//   right   screenshot + record · notifications · network volume mic brightness battery · tray
 //
 // Power and settings live in the control centre's header now.
 {
@@ -21,7 +21,7 @@
   "group/hw":      { "orientation": "horizontal", "modules": ["cpu", "custom/gpu", "memory"] },
   "group/capture": { "orientation": "horizontal", "modules": ["custom/screenshot", "custom/record"] },
   "group/tools":   { "orientation": "horizontal", "modules": ["custom/notifications"] },
-  "group/sys":     { "orientation": "horizontal", "modules": ["network", "bluetooth", "pulseaudio", "pulseaudio#mic", "battery"] },
+  "group/sys":     { "orientation": "horizontal", "modules": ["network", "bluetooth", "pulseaudio", "pulseaudio#mic", "backlight", "battery"] },
   // A drawer: only the note shows; hovering it slides out the song's name.
   "group/music": {
     "orientation": "horizontal",
@@ -178,6 +178,19 @@
     "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
     "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+",
     "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%-"
+  },
+
+  "backlight": {
+    "device": "nvidia_0",
+    "format": "{icon} {percent}%",
+    "format-icons": ["󰃞", "󰃝", "󰃟", "󰃠"],
+    "scroll-step": 5,
+    "on-scroll-up": "brightnessctl -d nvidia_0 set +5%",
+    "on-scroll-down": "brightnessctl -d nvidia_0 set 5%-",
+    "on-click": "~/.config/waybar/scripts/brightness.sh",
+    "on-click-right": "qs -c rice ipc call controlcenter toggle",
+    "tooltip-format": "Brightness: {percent}%",
+    "smooth-scrolling-threshold": 1
   },
 
   // Battery: icon steps with the charge; warning/critical colour from style.css.

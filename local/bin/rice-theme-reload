@@ -21,7 +21,7 @@ fi
 # itself; a SIGUSR2 on top restarted every module and made the bar flicker.
 pkill -USR1 -x kitty                    # re-read kitty.conf, colours included
 pkill -USR2 -x cava                     # colours only
-
+pkill -HUP -x xsettingsd >/dev/null 2>&1 # reload X11 / Xwayland theme
 # nvim: instances started via init.lua listen on $XDG_RUNTIME_DIR/nvim.<pid>.0.
 # Re-source the colorscheme so the new matugen palette file is picked up live.
 if command -v nvim >/dev/null; then
@@ -36,7 +36,7 @@ fi
 # adw-gtk3 (light) is only used if it is installed.
 if command -v gsettings >/dev/null; then
     mode="$(cat "$CACHE/mode" 2>/dev/null)"
-    if [[ "$mode" == light && -d /usr/share/themes/adw-gtk3 ]]; then
+    if [[ "$mode" == light && (-d /usr/share/themes/adw-gtk3 || -d "$HOME/.local/share/themes/adw-gtk3" || -d "$HOME/.themes/adw-gtk3") ]]; then
         theme=adw-gtk3; scheme=prefer-light
     else
         theme=adw-gtk3-dark; scheme=prefer-dark

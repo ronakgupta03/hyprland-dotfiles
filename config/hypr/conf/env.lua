@@ -3,6 +3,7 @@ hl.env("PATH", os.getenv("HOME") .. "/.local/bin:" .. (os.getenv("PATH") or ""))
 -- plasma-integration, which is not installed, and Qt silently falls back to an
 -- unthemed default (light chrome around a dark Dolphin view).
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
+hl.env("QT_PLUGIN_PATH", os.getenv("HOME") .. "/.local/lib/qt6/plugins:" .. os.getenv("HOME") .. "/.local/lib/qt/plugins:/usr/lib/qt6/plugins:/usr/lib/qt/plugins")
 hl.env("QT_QPA_PLATFORM", "wayland;xcb")
 hl.env("QT_WAYLAND_DISABLE_WINDOWDECORATION", "1")
 hl.env("GDK_BACKEND", "wayland,x11")

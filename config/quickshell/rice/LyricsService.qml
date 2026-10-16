@@ -92,7 +92,8 @@ Singleton {
         const gen = generation
         const t = cleanTitle(title), a = artist, len = length
         const done = (parsed, src) => {
-            root.cache[key] = { lines: parsed, source: parsed.length ? src : "" }
+            if (parsed.length > 0)
+                root.cache[key] = { lines: parsed, source: src }
             if (gen !== root.generation)
                 return
             root.lines = parsed
@@ -100,9 +101,22 @@ Singleton {
             root.loading = false
         }
 
-        lrclibGet(t, a, len, p1 => p1.length ? done(p1, "lrclib")
-            : lrclibSearch(t, a, len, p2 => p2.length ? done(p2, "lrclib search")
-                : netease(t, a, p3 => done(p3, "netease"))))
+        const art = primaryArtist(a) || a
+        lrclibGet(t, art, len, p1 => {
+            if (p1.length) {
+                done(p1, "lrclib")
+            } else {
+                lrclibSearch(t, art, len, p2 => {
+                    if (p2.length) {
+                        done(p2, "lrclib search")
+                    } else if (art !== a) {
+                        lrclibSearch(t, a, len, p3 => p3.length ? done(p3, "lrclib search") : netease(t, art, p4 => done(p4, "netease")))
+                    } else {
+                        netease(t, art, p4 => done(p4, "netease"))
+                    }
+                })
+            }
+        })
     }
 
     function reload() {
@@ -112,7 +126,15 @@ Singleton {
 
     function cleanTitle(t) {
         return t.replace(/\s*[\(\[][^\)\]]*(official|video|audio|lyric|visuali[sz]er|remaster|live|hd|4k)[^\)\]]*[\)\]]/gi, "")
+                .replace(/\s*[-–]\s*from\s+["'][^"']+["']/gi, "")
+                .replace(/\s*[-–]\s*from\s+.*$/gi, "")
+                .replace(/\s*[\(\[]from\s+[^)\]]+[\)\]]/gi, "")
                 .replace(/\s+/g, " ").trim()
+    }
+
+    function primaryArtist(a) {
+        if (!a) return ""
+        return a.split(/[,&]/)[0].trim()
     }
 
     function request(url, headers, callback) {
@@ -129,7 +151,10 @@ Singleton {
         xhr.send()
     }
 
-    readonly property var lrclibHeaders: ({ "Lrclib-Client": "new-rice desktop lyrics" })
+    readonly property var lrclibHeaders: ({
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64)",
+        "Lrclib-Client": "quickshell-lyrics/1.0 (ronakgupta3305@gmail.com)"
+    })
 
     function lrclibGet(t, a, len, callback) {
         let url = "https://lrclib.net/api/get?track_name=" + encodeURIComponent(t) + "&artist_name=" + encodeURIComponent(a)
@@ -145,12 +170,29 @@ Singleton {
     }
 
     function lrclibSearch(t, a, len, callback) {
-        const url = "https://lrclib.net/api/search?track_name=" + encodeURIComponent(t) + "&artist_name=" + encodeURIComponent(a)
+        const url = "https://lrclib.net/api/search?track_name=" + encodeURIComponent(t) + (a ? "&artist_name=" + encodeURIComponent(a) : "")
         request(url, lrclibHeaders, (status, body) => {
             try {
-                const synced = status === 200 ? JSON.parse(body).filter(r => r.syncedLyrics) : []
-                const best = (len > 1 ? synced.find(r => Math.abs(r.duration - len) <= 5) : null) || synced[0]
-                callback(best ? parseLrc(best.syncedLyrics) : [])
+                if (status !== 200) {
+                    callback([])
+                    return
+                }
+                const items = JSON.parse(body).filter(r => r.syncedLyrics && r.syncedLyrics.indexOf("[") !== -1)
+                if (len > 1) {
+                    items.sort((x, y) => {
+                        const dx = Math.abs((x.duration || 0) - len)
+                        const dy = Math.abs((y.duration || 0) - len)
+                        return dx - dy
+                    })
+                }
+                for (let i = 0; i < items.length; i++) {
+                    const parsed = parseLrc(items[i].syncedLyrics)
+                    if (parsed.length > 0) {
+                        callback(parsed)
+                        return
+                    }
+                }
+                callback([])
             } catch (e) {
                 callback([])
             }
