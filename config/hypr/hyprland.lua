@@ -45,8 +45,17 @@ require("conf.env")
 --   hl.monitor({ output = "DP-1", mode = "2560x1440@165", position = "0x0", scale = 1 })
 --   hl.monitor({ output = "HDMI-A-1", mode = "3840x2160@60", position = "2560x0", scale = 1.5 })
 --   hl.monitor({ output = "DP-2", mode = "2560x1440@180", position = "0x0", scale = 1, vrr = 2 })
-hl.monitor({ output = "eDP-1", mode = "1920x1080@60", position = "0x0", scale = 1.15 })
-hl.monitor({ output = "HDMI-A-1", mode = "1920x1080@60", position = "auto", scale = 1.15 })
+-- Dynamically load nwg-displays output if present
+local ok_mon = false
+local f_mon = io.open(rice.dir .. "/monitors.lua", "r")
+if f_mon then
+    f_mon:close()
+    ok_mon = pcall(dofile, rice.dir .. "/monitors.lua")
+end
+if not ok_mon then
+    hl.monitor({ output = "eDP-1", mode = "1920x1080@60", position = "0x0", scale = 1.15 })
+    hl.monitor({ output = "HDMI-A-1", mode = "1920x1080@60", position = "auto", scale = 1.15 })
+end
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 
 -- -------------------------------------------------------------------- look --

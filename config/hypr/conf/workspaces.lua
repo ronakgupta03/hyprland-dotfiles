@@ -7,3 +7,10 @@
 -- through a reload; move them with
 --   hyprctl dispatch 'hl.dsp.workspace.move({ workspace = 1, monitor = "DP-1" })'
 hl.workspace_rule({ workspace = "1", default_name = "main", layout_opts = { orientation = "left" } })
+
+-- Load nwg-displays generated workspaces if present
+local f_ws = io.open(rice.dir .. "/workspaces.lua", "r")
+if f_ws then
+    f_ws:close()
+    pcall(dofile, rice.dir .. "/workspaces.lua")
+end
