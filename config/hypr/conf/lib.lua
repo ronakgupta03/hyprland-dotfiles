@@ -111,6 +111,13 @@ local function close_special_if_open()
         if name == "" then name = "scratchpad" end
         hl.dispatch(hl.dsp.workspace.toggle_special(name))
     end
+    for _, m in ipairs(hl.get_monitors()) do
+        if m.special_workspace then
+            local name = tostring(m.special_workspace.name or ""):gsub("^special:?", "")
+            if name == "" then name = "scratchpad" end
+            hl.dispatch(hl.dsp.workspace.toggle_special(name))
+        end
+    end
 end
 
 -- Sway move scratchpad (Mod+Shift+-)
@@ -142,13 +149,31 @@ function rice.scratchpad_show()
 
     local active_win = hl.get_active_window()
     local active_addr = active_win and tostring(active_win.address) or nil
+    local cur_ws = hl.get_active_workspace()
+    if not cur_ws then return end
 
     local current_showing = nil
     if rice.scratchpad_active then
         current_showing = find_window_by_address(rice.scratchpad_active)
+        if not current_showing then
+            rice.scratchpad_active = nil
+        end
     end
 
     if current_showing then
+        local on_current_ws = (current_showing.workspace and current_showing.workspace.id == cur_ws.id)
+
+        if not on_current_ws then
+            -- Window is showing on another monitor or different workspace:
+            -- Transport it over to the currently active monitor and workspace!
+            hl.dispatch(hl.dsp.window.move({ workspace = cur_ws.id, window = current_showing }))
+            hl.dispatch(hl.dsp.window.float({ action = "set", window = current_showing }))
+            hl.dispatch(hl.dsp.focus({ window = current_showing }))
+            hl.dispatch(hl.dsp.window.center({ window = current_showing }))
+            rice.scratchpad_active = tostring(current_showing.address)
+            return
+        end
+
         if active_addr == rice.scratchpad_active then
             if #rice.scratchpad_stack == 1 then
                 hl.dispatch(hl.dsp.window.move({ workspace = "special:scratchpad", window = current_showing }))
@@ -163,6 +188,7 @@ function rice.scratchpad_show()
             end
         else
             hl.dispatch(hl.dsp.focus({ window = current_showing }))
+            hl.dispatch(hl.dsp.window.center({ window = current_showing }))
             return
         end
     end
@@ -174,13 +200,12 @@ function rice.scratchpad_show()
         return rice.scratchpad_show()
     end
 
-    local mon = hl.get_monitor(target_win.monitor) or hl.get_active_monitor()
-    local target_ws = mon and mon.active_workspace or hl.get_active_workspace()
-
-    hl.dispatch(hl.dsp.window.move({ workspace = target_ws.id, window = target_win }))
+    -- Pull window from scratchpad directly to the CURRENT active workspace on the CURRENT monitor
+    hl.dispatch(hl.dsp.window.move({ workspace = cur_ws.id, window = target_win }))
     close_special_if_open()
     hl.dispatch(hl.dsp.window.float({ action = "set", window = target_win }))
     hl.dispatch(hl.dsp.focus({ window = target_win }))
+    hl.dispatch(hl.dsp.window.center({ window = target_win }))
     rice.scratchpad_active = target_addr
 end
 
